@@ -1,0 +1,85 @@
+AWS Account 
+	- free for 1 Year to each new user
+	- 750 hours of Linux Micro Instances per month
+	- 750 hours of Windows Micro Instances per month
+
+Amazon EC2 (Elastic Compute Cloud)
+	- Web Service
+	- Allows you to launch VMs in the AWS cloud
+	- Easy Web-Scale Computing
+	- Obtain and Launch singe VM or 1000s of VMs in minutes
+	- Dashboard specific to each region
+
+Amazon Machine Image
+	- Template containing S/W Congigurations including OS, Application Server and Applications required to launch the instance
+	- Amazon Linux AMI, Redhat Enterprise, Ubuntu, Windows
+
+AWS uses Public Key Cryptography to encrypt and decrypt Login Information
+AWS stores Public Key
+User stores Provate Key
+
+
+
+1. Create User on AWS Console with Programmatic access
+2. sudo apt install awscli
+3. aws configure -> aws s3 ls ----- aws ec2 describe-hosts ----- aws iam list-users
+
+AWS VPC
+	- Virtual Private Cloud
+	- Virtual N/W in Public Cloud
+	- Configure as Requirement
+
+Requirement
+	- 3 VMs
+	
+Architecture
+	- 1 VPC with IP range 10.0.0.0/16
+	- 1 Public Subnet with IP range 10.0.1.0/24
+	- Resources in Public Subnet will have IP 10.0.1.__
+	- Public Subnet is attached to Internet Gateway to access Resources, IAM
+
+4. Create VPC
+	- aws ec2 create-vpc --cidr-block 10.0.0.0/16
+	- aws ec2 create-tags --resources VPCID --tags Key=Name,Value=my-cloud-vpc
+
+5. Create Internet Gateway and Attach it to VPC
+	- aws ec2 create-internet-gateway
+	- aws ec2 create-tags --resources IGWID --tags Key=Name,Value=my-cloud-igw
+	- aws ec2 attach-internet-gateway --internet-gateway-id IGWID --vpc-id VPCID
+
+6. Create Subnet
+	- aws ec2 create-subnet --vpc-id VPCID --cidr-block 10.0.1.0/24
+	- aws ec2 create-tags --resources SUBNETID --tags Key=Name,Value=my-cloud-pub-subnet
+
+7. Create Route Table
+	- Destination	Target	Status	Propagated
+	- 10.0.0.0/16	local	active	No
+	- 0.0.0.0/0		IGW-ID			No
+	- aws ec2 create-tags --resources ROUTETABLEID --tags Key=Name,Value=my-cloud-pub-rt
+	- aws ec2 create-route --route-table-id ROUTETABLEID --destination-cidr-block 0.0.0.0/0 --gateway-id IGWID
+
+8. Create Subnet Association
+	- Select Public Subnet
+	- aws ec2 associate-route-table --route-table-id ROUTETABLEID --subnet-id SUBNETID
+	- Association Id: RTSUBASSID
+
+9. Security Group
+	- Security at Instance level
+	- Inbound Rules (Traffic coming to EC2)
+		- Type			Protocol	Port Range	Source		Descr
+		- All Traffic	All			All			Custom
+		- All Traffic	All			All			My IP/[Anywhere]	(Copy Auto Generated IP)
+	- aws ec2 create-tags --resources SGID --tags Key=Name,Value=my-cloud-sec-grp
+
+10. Create NACL
+	- Security Layer within Network
+	- Inbound Rules
+		- Rule #	Type			Protocol	Port Range	Source		Allow/Deny
+		- 100		All Traffic		All			All			Paste IP/[No Change]	Allow
+	- aws ec2 create-tags --resources NACLID --tags Key=Name,Value=my-cloud-nacl
+
+11. Create EC2 Instances
+12. Download Key-Pair
+13. Copy Key Pair
+	- cp /mnt/F/Master's/WS20/Cloud/my-cloud-key-pair.pem my-cloud-key-pair.pem
+14. Run Instances
