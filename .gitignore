@@ -1,0 +1,8 @@
+template
+build
+/hello-python/template/
+/hello-python/build/
+/hello-world-java/build/
+/hello-world-java/template/
+/hello-world-php7/build/
+/hello-world-php7/template/
