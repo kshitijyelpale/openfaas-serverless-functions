@@ -1,0 +1,121 @@
+Add User
+
+1. SC
+2. SC
+3. Click on Next
+4. Click on Create User
+5. Download CSV
+
+
+1. Install Docker (On all 3 Instances - Master, Node1, Node2)
+	
+	a. Uninstall old versions
+		
+		$ sudo apt-get remove docker docker-engine docker.io containerd runc
+
+	b. Install using the repository
+	
+		b.1 SET UP THE REPOSITORY
+		
+			$ sudo apt-get update
+			$ sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+		
+		b.2 Add Docker’s official GPG key
+		
+			$ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+			$ sudo apt-key fingerprint 0EBFCD88
+
+		b.3 Set up the stable repository for amd64
+		
+			$ sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+	
+	c. INSTALL DOCKER ENGINE
+
+		c.1 Update apt Package
+		
+			 $ sudo apt-get update
+			 $ sudo apt-get install docker-ce docker-ce-cli containerd.io
+
+		c.2 Install Current Latest versions
+		
+			$ apt-cache madison docker-ce
+			$ sudo apt-get install docker-ce=5:20.10.2~3-0~ubuntu-focal docker-ce-cli=5:20.10.2~3-0~ubuntu-focal containerd.io
+			
+	d. Check Docker Version
+	
+		docker --version
+
+2. Install Kubernetes
+
+	Follow these steps on All nodes (Master, Node1, Node2):
+
+			a. Get the Kubernetes gpg key:
+				
+				curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+
+			b. Add the Kubernetes repository:
+				
+				cat << EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list 
+				deb https://apt.kubernetes.io/ kubernetes-xenial main 
+				EOF
+			
+			c. Update your packages:
+			
+				sudo apt-get update
+				
+			d. Install kubelet, kubeadm and kubectl:
+			
+				sudo apt-get install -y kubelet kubeadm kubectl
+			
+			e. Hold the versions of Docker, kubelet, kubeadm and kubectl:
+			
+				sudo apt-mark hold docker-ce kubelet kubeadm kubectl
+			
+			f. Add the iptables rule to sysctl.conf:
+			
+				echo "net.bridge.bridge-nf-call-iptables=1" | sudo tee -a /etc/sysctl.conf
+
+			g. Enable iptables immediately:
+			
+				sudo sysctl -p
+					
+	Follow these steps only on Master Node:
+	
+			a. Initialize the cluster
+			
+				sudo kubeadm init --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors=NumCPU,Mem
+				
+				ERROR***
+					
+					[preflight] Running pre-flight checks
+					[WARNING IsDockerSystemdCheck]: detected "cgroupfs" as the Docker cgroup driver. The recommended driver is "systemd". Please follow the guide at https
+					://kubernetes.io/docs/setup/cri/
+					[WARNING SystemVerification]: this Docker version is not on the list of validated versions: 20.10.2. Latest validated version: 19.03
+					error execution phase preflight: [preflight] Some fatal errors occurred:
+					[ERROR NumCPU]: the number of available CPUs 1 is less than the required 2
+					[ERROR Mem]: the system RAM (978 MB) is less than the minimum 1700 MB
+					[preflight] If you know what you are doing, you can make a check non-fatal with `--ignore-preflight-errors=...`
+					To see the stack trace of this error execute with --v=5 or higher
+
+			b. Set up local kubeconfig
+			
+				mkdir -p $HOME/.kube
+				sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+				sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+			c. Apply Flannel CNI network overlay
+			
+				kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+			
+	Follow these steps only on Worker Nodes:
+	
+			a. Join the worker nodes to the cluster
+				
+				kubeadm join 172.31.46.10:6443 --token x216g7.2dlimm91ea3ghsgc --discovery-token-ca-cert-hash sha256:0b1ad0360d006d9a1069cc3a2a2c3f05879ae2ac4252dd4a865e52cd80fc3a05
+				
+	Verify the Worker nodes on Master node:
+	
+		kubectl get nodes
+
+
+
